@@ -7,29 +7,27 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  lint_and_test:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install Rust
+      - name: Set up Rust
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-          source $HOME/.cargo/env
+          rustup update
+          rustup default stable
 
-      - name: Build
-        run: cargo build --verbose
-
-      - name: Run tests
-        run: cargo test --verbose
-
-      - name: Check formatting
+      - name: Check Formatting
         run: |
           rustup component add rustfmt
           cargo fmt -- --check
 
-      - name: Lint with clippy
+      - name: Lint with Clippy
         run: |
           rustup component add clippy
           cargo clippy -- -D warnings
+
+      - name: Run Tests
+        run: |
+          cargo test
