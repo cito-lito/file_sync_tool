@@ -1,35 +1,18 @@
-use notify::{Config, RecommendedWatcher, RecursiveMode, Result, Watcher};
 use std::path::PathBuf;
-use std::sync::mpsc::channel;
+mod path_watcher;
 
-fn main() -> Result<()> {
-    let config = Config::default(); // default polling 2s
-
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path_to_watch = PathBuf::from("./");
 
-    let (tx, rx) = channel();
+    let (_watcher, event_rx) = path_watcher::watch_path(path_to_watch)?;
 
-    let mut watcher = match RecommendedWatcher::new(tx, config) {
-        Ok(watcher) => watcher,
-        Err(e) => {
-            eprintln!("Error creating watcher: {:?}", e);
-            std::process::exit(1);
-        }
-    };
-
-    // Add a path to be watched. All files and directories at that path, recursively.
-   if let Err(e) =  watcher.watch(&path_to_watch, RecursiveMode::Recursive){
-        eprintln!("Error watching path: {:?}", e);
-        std::process::exit(1);
-   }
-
-    // log the file events for now
-    for event in rx {
+    for event in event_rx {
         match event {
             Ok(event) => handle_event(event),
             Err(e) => eprintln!("watch error: {:?}", e),
         }
     }
+
     Ok(())
 }
 
