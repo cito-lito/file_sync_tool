@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn handle_event(event: notify::Event){
+fn handle_event(event: notify::Event) {
     //do smth
     println!("{:?}", event)
 }
