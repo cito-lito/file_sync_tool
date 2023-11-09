@@ -1,18 +1,14 @@
 .PHONY: build run clean test
 
 build:
-	docker-compose build
+	cargo build
+	cargo clippy
+	cargo fmt
 
 run: build
-	docker-compose up
+	cargo run
 
-# Stop and remove the containers
-down:
-	docker-compose down
-
-# Clean up Docker containers, and the Rust target directory
 clean:
-	docker-compose down --rmi all
 	rm -rf target/
 
 test:
