@@ -1,16 +1,17 @@
-.PHONY: build run clean test
+.PHONY: build run clean test lint
 
 build:
 	cargo build
-	cargo clippy
-	cargo fmt
+
+lint:
+	cargo clippy -- -D warnings
+	cargo fmt -- --check
 
 run: build
 	cargo run
 
 clean:
-	rm -rf target/
+	cargo clean
 
 test:
 	cargo test
-
