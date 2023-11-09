@@ -1,0 +1,12 @@
+version: '3.8'  
+services:
+  file_sync_tool:
+    build: .
+    volumes:
+      - .:/usr/src/myapp  # Mount the project directory inside the container
+      - cargo_cache:/usr/local/cargo/registry  # Cache the cargo registry
+    environment:
+      RUST_BACKTRACE: 1  # Enable backtraces for Rust panics
+
+volumes:
+  cargo_cache:
