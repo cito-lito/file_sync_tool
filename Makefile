@@ -14,4 +14,4 @@ clean:
 	cargo clean
 
 test:
-	cargo test
+	cargo test -- --nocapture
