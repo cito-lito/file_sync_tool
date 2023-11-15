@@ -4,6 +4,16 @@ use std::io::{self};
 use std::path::PathBuf;
 use std::time::Duration;
 
+struct TestFile {
+    path: PathBuf,
+}
+
+impl Drop for TestFile {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.path);
+    }
+}
+
 #[test]
 fn test_file_create_event() -> io::Result<()> {
     let test_dir = PathBuf::from("./tests");
@@ -22,7 +32,8 @@ fn test_file_create_event() -> io::Result<()> {
 
     println!("Event: {:?}", received_event);
 
-    fs::remove_file(&test_file).expect("Failed to remove test file");
+    //ensure deleting the test file
+    let _ = fs::remove_file(&test_file);
 
     // check that an event was received
     assert!(received_event.is_ok(), "Failed to receive file event");
