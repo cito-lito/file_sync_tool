@@ -4,8 +4,8 @@ build:
 	cargo build
 
 lint:
-	cargo clippy -- -D warnings
 	cargo fmt -- --check
+	cargo clippy -- -D warnings
 
 run: build
 	cargo run
