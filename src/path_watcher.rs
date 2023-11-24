@@ -1,22 +1,29 @@
-use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Result, Watcher};
+use notify::FsEventWatcher;
+use notify::{RecursiveMode, Watcher};
+use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, FileIdMap};
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver};
+use std::time::Duration;
 
-pub fn watch_path(path_to_watch: PathBuf) -> Result<(RecommendedWatcher, Receiver<Result<Event>>)> {
-    let config = Config::default();
+pub fn watch_path_with_debouncer(
+    path_to_watch: PathBuf,
+) -> Result<
+    (
+        Debouncer<FsEventWatcher, FileIdMap>,
+        Receiver<DebounceEventResult>,
+    ),
+    std::io::Error,
+> {
     let (tx, rx) = channel();
+    let mut debouncer = new_debouncer(Duration::from_secs(2), None, tx).expect("new_debouncer");
 
-    let mut watcher = RecommendedWatcher::new(tx, config).map_err(|error| {
-        eprintln!("Error creating watcher: {:?}", error);
-        error
-    })?;
-
-    watcher
+    debouncer
+        .watcher()
         .watch(&path_to_watch, RecursiveMode::Recursive)
-        .map_err(|error| {
-            eprintln!("Error watching path: {:?}", error);
-            error
-        })?;
+        .expect("watch");
+    debouncer
+        .cache()
+        .add_root(&path_to_watch, RecursiveMode::Recursive);
 
-    Ok((watcher, rx))
+    Ok((debouncer, rx))
 }

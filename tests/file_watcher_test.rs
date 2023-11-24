@@ -19,8 +19,8 @@ fn test_file_create_event() -> io::Result<()> {
     let test_dir = PathBuf::from("./tests");
     let test_file = test_dir.join("test_file.txt");
 
-    let (_watcher, rx) =
-        path_watcher::watch_path(test_dir.clone()).expect("Failed to start watch path");
+    let (_debouncer, rx) = path_watcher::watch_path_with_debouncer(test_dir.clone())
+        .expect("Failed to start watch path");
 
     // trigger event by creating a file
     let mut _file: File = File::create(&test_file).expect("Failed to create test file");

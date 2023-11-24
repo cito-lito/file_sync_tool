@@ -1,18 +1,24 @@
 use notify::{
-    event::{self, CreateKind},
-    Event, EventKind,
+    event::{self, CreateKind, ModifyKind},
+    EventKind,
 };
+use notify_debouncer_full::DebouncedEvent;
 use std::path::PathBuf;
 mod path_watcher;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path_to_watch = PathBuf::from("./tests/from");
 
-    let (_watcher, event_rx) = path_watcher::watch_path(path_to_watch)?;
-
-    for event in event_rx {
-        match event {
-            Ok(event) => handle_event(event),
+    let (_debouncer, e_rx) =
+        path_watcher::watch_path_with_debouncer(path_to_watch).expect("watch_path_with_debouncer");
+    for debounced_result in e_rx {
+        match debounced_result {
+            Ok(events) => {
+                for event in events {
+                    println!("Watching  {:?}...", event);
+                    handle_event(event);
+                }
+            }
             Err(e) => eprintln!("watch error: {:?}", e),
         }
     }
@@ -20,9 +26,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn handle_event(event: Event) {
+fn handle_event(event: DebouncedEvent) {
     match event.kind {
-        EventKind::Create(event_kind) => handle_create_event(event_kind, event.paths),
+        EventKind::Create(event_kind) => handle_create_event(event_kind, event.paths.clone()),
         EventKind::Modify(_) => {
             println!("MODIFY {:?}", event);
         }
@@ -45,6 +51,22 @@ fn handle_create_event(event_kind: event::CreateKind, paths: Vec<PathBuf>) {
             }
             _ => {
                 println!("UNHANDLED create event {:?}", event_kind);
+            }
+        }
+    }
+}
+
+fn _handle_modify_event(event_kind: event::ModifyKind, paths: Vec<PathBuf>) {
+    for path in paths {
+        match event_kind {
+            ModifyKind::Data(_) => {
+                println!("MODIFY DATA {:?}", path);
+            }
+            ModifyKind::Name(_) => {
+                println!("MODIFY NAME {:?}", path);
+            }
+            _ => {
+                println!("UNHANDLED modify event {:?}", event_kind);
             }
         }
     }
