@@ -28,10 +28,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn handle_event(event: DebouncedEvent) {
     match event.kind {
-        EventKind::Create(event_kind) => handle_create_event(event_kind, event.paths.clone()),
-        EventKind::Modify(_) => {
-            println!("MODIFY {:?}", event);
-        }
+        EventKind::Create(event_kind) => handle_create_event(event_kind, &event.paths),
+        EventKind::Modify(event_kind) => handle_modify_event(event_kind, &event.paths),
         EventKind::Remove(_) => {
             println!("REMOVE {:?}", event);
         }
@@ -41,13 +39,11 @@ fn handle_event(event: DebouncedEvent) {
     }
 }
 
-fn handle_create_event(event_kind: event::CreateKind, paths: Vec<PathBuf>) {
+fn handle_create_event(event_kind: event::CreateKind, paths: &Vec<PathBuf>) {
     for path in paths {
         match event_kind {
             CreateKind::File => {
-                if let Some(file_path) = path.to_str() {
-                    copy_file_to_dest(file_path);
-                }
+                create_file(path);
             }
             _ => {
                 println!("UNHANDLED create event {:?}", event_kind);
@@ -56,11 +52,12 @@ fn handle_create_event(event_kind: event::CreateKind, paths: Vec<PathBuf>) {
     }
 }
 
-fn _handle_modify_event(event_kind: event::ModifyKind, paths: Vec<PathBuf>) {
+fn handle_modify_event(event_kind: event::ModifyKind, paths: &Vec<PathBuf>) {
     for path in paths {
         match event_kind {
             ModifyKind::Data(_) => {
                 println!("MODIFY DATA {:?}", path);
+                copy_file(path);
             }
             ModifyKind::Name(_) => {
                 println!("MODIFY NAME {:?}", path);
@@ -72,25 +69,40 @@ fn _handle_modify_event(event_kind: event::ModifyKind, paths: Vec<PathBuf>) {
     }
 }
 
-fn copy_file_to_dest(file_path: &str) {
+// for now leverage fs copy
+fn create_file(file_path: &PathBuf) {
     let dest_path = PathBuf::from("./tests/to");
 
-    if let Some(file_name) = PathBuf::from(file_path).file_name() {
-        let dest_file = dest_path.join(file_name);
+    let file_name = file_path.file_name().expect("file name should exist");
+    let dest_file = dest_path.join(file_name);
 
-        if dest_file.exists() {
-            println!("file already exists in dest: {:?}", dest_file);
-        } else {
-            match std::fs::copy(file_path, dest_file) {
-                Ok(_) => {
-                    println!("COPIED file to dest: {:?}", dest_path);
-                }
-                Err(e) => {
-                    eprintln!("error copying file to dest: {}", e);
-                }
+    if dest_file.exists() {
+        println!("file already exists in dest: {:?}", dest_file);
+    } else {
+        match std::fs::copy(file_path, dest_file) {
+            Ok(_) => {
+                println!("COPIED file to dest: {:?}", dest_path);
+            }
+            Err(e) => {
+                eprintln!("error copying file to dest: {}", e);
             }
         }
-    } else {
-        eprintln!("error getting file name from path: {}", file_path);
+    }
+}
+
+// for now leverage fs copy
+fn copy_file(file_path: &PathBuf) {
+    let dest_path = PathBuf::from("./tests/to");
+
+    let file_name = file_path.file_name().expect("file name should exist");
+    let dest_file = dest_path.join(file_name);
+
+    match std::fs::copy(file_path, dest_file) {
+        Ok(_) => {
+            println!("COPIED file to dest: {:?}", dest_path);
+        }
+        Err(e) => {
+            eprintln!("error copying file to dest: {}", e);
+        }
     }
 }
